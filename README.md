@@ -1,7 +1,6 @@
 # SprintDesk — Production Engineering Assessment
 
 [![Build & Test Status](https://img.shields.io/badge/tests-73%20passed%20%7C%20100%25-success)](./docs/SUBMISSION_CHECKLIST.md)
-[![CI](https://github.com/Code-X-utkarsh/SprintDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/Code-X-utkarsh/SprintDesk/actions/workflows/ci.yml)
 [![TypeScript Strict](https://img.shields.io/badge/typescript-strict%20mode-blue)](./tsconfig.app.json)
 [![Lighthouse Mobile Performance](https://img.shields.io/badge/Lighthouse%20Perf-94%2F100-success)](./study-material/performance-accessibility-testing.md)
 [![Lighthouse Mobile Accessibility](https://img.shields.io/badge/Lighthouse%20A11y-98%2F100-success)](./study-material/performance-accessibility-testing.md)
@@ -196,9 +195,9 @@ For reviewer testing, use the non-sensitive public demo credential from DummyJSO
 
 ---
 
-## Development Workflow & CI
+## Development Workflow
 
-SprintDesk uses a two-branch Git workflow with automated CI via GitHub Actions.
+SprintDesk uses a two-branch Git workflow.
 
 ### Branches
 
@@ -213,27 +212,24 @@ SprintDesk uses a two-branch Git workflow with automated CI via GitHub Actions.
 feature/my-feature   (create from develop)
         │
         ▼
-    develop          (PR + CI must pass + review)
+    develop          (PR + review)
         │
         ▼
-      main           (PR + CI must pass + review → Amplify deploys)
+      main           (PR + review → Amplify deploys)
 ```
 
-### CI Pipeline (`.github/workflows/ci.yml`)
+### CI/CD (planned)
 
-Triggered on:
-- Push to `develop`
-- Pull requests targeting `develop` or `main`
+GitHub Actions CI will be configured through the GitHub repository UI to run:
 
-Steps:
 1. `npm ci` — deterministic dependency install
 2. `npm run test` — 73 Vitest tests across 11 files
 3. `npm run build` — TypeScript strict check (`tsc -b`) + Vite production bundle
 
-### Recommended Branch Protection (manual GitHub configuration)
+### Recommended Branch Protection (to be configured in GitHub)
 
 - Require pull request before merging to `main`
-- Require CI status checks to pass
+- Require CI status checks to pass (once CI workflow is created)
 - Require at least one reviewer approval
 - No direct pushes to `main`
 
