@@ -1,176 +1,231 @@
-import React, { useState } from 'react';
-import { Button, Select, Modal, DataTable, type ColumnDef } from '../components/ui';
-import { useToast } from '../hooks/useToast';
-import { Sparkles, Layers, CheckCircle2, Clock } from 'lucide-react';
-
-interface QuickTaskDemo {
-  id: number;
-  title: string;
-  sprint: string;
-  status: string;
-  priority: string;
-}
-
-const demoTasks: QuickTaskDemo[] = [
-  { id: 1, title: 'Implement authentication flow', sprint: 'Sprint 3', status: 'Done', priority: 'High' },
-  { id: 2, title: 'Build Kanban board foundation', sprint: 'Sprint 3', status: 'In Progress', priority: 'High' },
-  { id: 3, title: 'Create reusable UI component system', sprint: 'Sprint 3', status: 'Done', priority: 'Medium' },
-  { id: 4, title: 'Design notification system', sprint: 'Sprint 3', status: 'Backlog', priority: 'Low' },
-];
+import React, { useState, useMemo } from 'react';
+import { useBoardStore } from '../stores/useBoardStore';
+import { useBoardData } from '../hooks/useBoardData';
+import { getAnalyticsSummary } from '../utils/analytics';
+import { CustomSelect, DataTable, Skeleton, type ColumnDef } from '../components/ui';
+import type { Task } from '../types';
+import { Layers, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { cn } from '../utils/cn';
 
 export const DashboardPage: React.FC = () => {
-  const { toast } = useToast();
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [selectedSprint, setSelectedSprint] = useState('3');
+  const { isLoading } = useBoardData();
+  const { tasks, sprints, users } = useBoardStore();
+  const [selectedSprintId, setSelectedSprintId] = useState<string>('3');
 
-  const columns: ColumnDef<QuickTaskDemo>[] = [
-    { header: 'Task Title', accessorKey: 'title', className: 'font-medium text-slate-900 dark:text-white' },
-    { header: 'Sprint', accessorKey: 'sprint' },
+  const activeSprint = useMemo(() => {
+    return sprints.find((s) => String(s.id) === selectedSprintId) || sprints[sprints.length - 1];
+  }, [sprints, selectedSprintId]);
+
+  // Tasks belonging to selected sprint
+  const sprintTasks = useMemo(() => {
+    return tasks.filter((t) => Number(t.sprintId) === (activeSprint?.id || 3));
+  }, [tasks, activeSprint]);
+
+  // Derive metrics using centralized getAnalyticsSummary helper
+  const summary = useMemo(
+    () => getAnalyticsSummary(tasks, Number(selectedSprintId), sprints),
+    [tasks, selectedSprintId, sprints]
+  );
+
+  const inProgressCount = useMemo(
+    () => sprintTasks.filter((t) => t.status === 'in-progress' || t.status === 'review').length,
+    [sprintTasks]
+  );
+
+  const sprintOptions = sprints.map((s) => ({
+    value: String(s.id),
+    label: `${s.name} ${s.id === 3 ? '(Active)' : ''}`,
+    description: `${s.startDate} to ${s.endDate}`,
+  }));
+
+  const columns: ColumnDef<Task>[] = [
+    {
+      header: 'Task Title',
+      accessorKey: 'title',
+      cell: (row) => (
+        <span className="font-semibold text-neutral-900 dark:text-white leading-snug">
+          {row.title}
+        </span>
+      ),
+    },
     {
       header: 'Status',
       cell: (row) => (
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-            row.status === 'Done'
-              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-              : row.status === 'In Progress'
-              ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-          }`}
+          className={cn(
+            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border',
+            row.status === 'done'
+              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+              : row.status === 'in-progress'
+              ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+              : row.status === 'review'
+              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+          )}
         >
-          {row.status}
+          {row.status.replace('-', ' ')}
         </span>
       ),
     },
-    { header: 'Priority', accessorKey: 'priority' },
+    {
+      header: 'Priority',
+      cell: (row) => (
+        <span
+          className={cn(
+            'inline-flex items-center gap-1 text-xs font-semibold capitalize',
+            row.priority === 'high'
+              ? 'text-rose-600 dark:text-rose-400'
+              : row.priority === 'medium'
+              ? 'text-amber-600 dark:text-amber-400'
+              : 'text-emerald-600 dark:text-emerald-400'
+          )}
+        >
+          <span
+            className={cn(
+              'w-1.5 h-1.5 rounded-full',
+              row.priority === 'high' ? 'bg-rose-500' : row.priority === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
+            )}
+          />
+          {row.priority}
+        </span>
+      ),
+    },
+    {
+      header: 'Assignee',
+      cell: (row) => {
+        const user = users.find((u) => u.id === row.assigneeId);
+        return user ? (
+          <div className="flex items-center gap-2">
+            <img src={user.avatar} alt={user.name} className="h-5 w-5 rounded-full object-cover" />
+            <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{user.name}</span>
+          </div>
+        ) : (
+          <span className="text-xs text-neutral-400 italic">Unassigned</span>
+        );
+      },
+    },
+    {
+      header: 'Due Date',
+      cell: (row) => (
+        <span className="text-xs text-neutral-600 dark:text-neutral-400 font-mono">
+          {row.dueDate ? new Date(row.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+        </span>
+      ),
+    },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header Bar with Custom Sprint Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-200/80 dark:border-neutral-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Sprint Overview
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+            Dashboard Overview
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Engineering team progress metrics and design system component primitives.
+          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+            Real-time sprint progress, task completion metrics, and workload distribution.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Select
-            options={[
-              { value: '1', label: 'Sprint 1' },
-              { value: '2', label: 'Sprint 2' },
-              { value: '3', label: 'Sprint 3 (Active)' },
-            ]}
-            value={selectedSprint}
-            onChange={(e) => setSelectedSprint(e.target.value)}
-            className="w-40"
+        <div className="w-full sm:w-64">
+          <CustomSelect
+            options={sprintOptions}
+            value={selectedSprintId}
+            onChange={(val) => setSelectedSprintId(String(val))}
+            ariaLabel="Select Sprint"
           />
-
-          <Button
-            variant="primary"
-            leftIcon={<Sparkles className="h-4 w-4" />}
-            onClick={() => {
-              setIsDemoModalOpen(true);
-              toast.info('Modal opened', 'Testing design system modal primitive');
-            }}
-          >
-            Test Modal Primitive
-          </Button>
         </div>
       </div>
 
-      {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Active Sprint
-            </span>
-            <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">Sprint {selectedSprint}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Aug 17 - Aug 28, 2026</p>
+      {/* Active Sprint Metrics Cards Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
         </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Total Sprint Tasks
-            </span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Active Sprint Card */}
+          <div className="p-5 bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                Sprint Target
+              </span>
+              <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-neutral-900 dark:text-white mt-2">
+              {summary.selectedSprintName}
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-mono">
+              {activeSprint?.startDate} → {activeSprint?.endDate}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">30 Tasks</p>
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Mock dataset initialized</p>
+
+          {/* Active Sprint Tasks & Completion Rate */}
+          <div className="p-5 bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                Total Sprint Tasks
+              </span>
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-neutral-900 dark:text-white mt-2">
+              {summary.selectedSprintTasks} Tasks
+            </p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-semibold">
+              {summary.selectedSprintCompletionRate}% completion rate ({summary.selectedSprintCompletedTasks} done)
+            </p>
+          </div>
+
+          {/* In-Progress & Review Workload */}
+          <div className="p-5 bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                In-Progress Workload
+              </span>
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-neutral-900 dark:text-white mt-2">
+              {inProgressCount} Active
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              Currently in progress or under review
+            </p>
+          </div>
+
+          {/* Overdue Items */}
+          <div className="p-5 bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                Attention Required
+              </span>
+              <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-neutral-900 dark:text-white mt-2">
+              {summary.overdueTasks} Overdue
+            </p>
+            <p className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-semibold">
+              {summary.overdueTasks > 0 ? 'Requires immediate focus' : 'All tasks on schedule'}
+            </p>
+          </div>
         </div>
+      )}
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Toast System Demo
-            </span>
-            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div className="flex gap-2 mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toast.success('Action Completed', 'Task status updated successfully!')}
-            >
-              Toast Success
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => toast.error('API Error', 'Failed to update remote state.')}
-            >
-              Toast Error
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* DataTable Demo */}
+      {/* Active Sprint Tasks DataTable */}
       <div className="space-y-3">
-        <h2 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
-          Reusable DataTable Component Demonstration
-        </h2>
-        <DataTable columns={columns} data={demoTasks} />
-      </div>
-
-      {/* Modal Primitive Demonstration */}
-      <Modal
-        isOpen={isDemoModalOpen}
-        onClose={() => setIsDemoModalOpen(false)}
-        title="Reusable Modal Component"
-        description="This modal primitive manages focus, traps tab navigation, listens for Escape key closes, and locks body scrolling."
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setIsDemoModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setIsDemoModalOpen(false);
-                toast.success('Confirmed', 'Modal confirmed successfully!');
-              }}
-            >
-              Confirm Action
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-          <p>
-            The Modal component is a pure UI primitive designed for SprintDesk. It can be composed
-            later for delete confirmations, task creation forms, and details drawers.
-          </p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold tracking-tight text-neutral-900 dark:text-white">
+            {summary.selectedSprintName} Task Overview ({sprintTasks.length})
+          </h2>
+          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            Showing tasks for {summary.selectedSprintName}
+          </span>
         </div>
-      </Modal>
+
+        <DataTable columns={columns} data={sprintTasks} />
+      </div>
     </div>
   );
 };

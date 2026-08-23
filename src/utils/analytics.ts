@@ -34,6 +34,11 @@ export interface AnalyticsSummary {
   completionRate: number; // Percentage (0 - 100)
   overdueTasks: number;
   activeSprintTasks: number;
+  selectedSprintId: number;
+  selectedSprintName: string;
+  selectedSprintTasks: number;
+  selectedSprintCompletedTasks: number;
+  selectedSprintCompletionRate: number;
 }
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -51,6 +56,31 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 };
 
 /**
+ * Robust helper determining if a task is overdue.
+ * A task is overdue ONLY when:
+ * 1. dueDate < currentDate (YYYY-MM-DD string comparison)
+ * 2. task is not completed (status !== 'done' && !completedAt)
+ * 3. task due today is NOT overdue
+ */
+export function isTaskOverdue(task: Task, currentDate: Date = new Date()): boolean {
+  if (!task || !task.dueDate || task.status === 'done' || Boolean(task.completedAt)) {
+    return false;
+  }
+
+  try {
+    const taskDueDateStr = task.dueDate.split('T')[0];
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const currentDateStr = `${year}-${month}-${day}`;
+
+    return taskDueDateStr < currentDateStr;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Derives Sprint Velocity data (completed tasks per sprint)
  */
 export function getSprintVelocity(tasks: Task[] = [], sprints: Sprint[] = []): SprintVelocityItem[] {
@@ -59,7 +89,7 @@ export function getSprintVelocity(tasks: Task[] = [], sprints: Sprint[] = []): S
   const safeTasks = Array.isArray(tasks) ? tasks : [];
 
   return sprints.map((sprint) => {
-    const sprintTasks = safeTasks.filter((t) => t.sprintId === sprint.id);
+    const sprintTasks = safeTasks.filter((t) => Number(t.sprintId) === Number(sprint.id));
     const completedTasks = sprintTasks.filter(
       (t) => t.status === 'done' || Boolean(t.completedAt)
     ).length;
@@ -169,28 +199,42 @@ export function getCompletionTrend(tasks: Task[] = []): CompletionTrendItem[] {
 }
 
 /**
- * Derives Summary KPI metrics from current tasks
+ * Centralized, shared analytics summary calculation for Dashboard and Analytics pages.
  */
-export function getAnalyticsSummary(tasks: Task[] = []): AnalyticsSummary {
+export function getAnalyticsSummary(
+  tasks: Task[] = [],
+  selectedSprintId: number | string = 3,
+  sprints: Sprint[] = [],
+  currentDate: Date = new Date()
+): AnalyticsSummary {
   const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeSprints = Array.isArray(sprints) ? sprints : [];
+  const targetSprintId = Number(selectedSprintId) || 3;
+
+  // 1. Global Application Metrics
   const totalTasks = safeTasks.length;
   const completedTasks = safeTasks.filter(
     (t) => t.status === 'done' || Boolean(t.completedAt)
   ).length;
-
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const now = new Date().setHours(0, 0, 0, 0);
-  const overdueTasks = safeTasks.filter((t) => {
-    if (!t.dueDate || t.status === 'done') return false;
-    try {
-      return new Date(t.dueDate).getTime() < now;
-    } catch {
-      return false;
-    }
-  }).length;
+  // Global overdue task count
+  const overdueTasks = safeTasks.filter((t) => isTaskOverdue(t, currentDate)).length;
 
-  const activeSprintTasks = safeTasks.filter((t) => t.sprintId === 3).length;
+  // 2. Selected Sprint Metrics
+  const activeSprintTasks = safeTasks.filter((t) => Number(t.sprintId) === 3).length;
+  const sprintTasks = safeTasks.filter((t) => Number(t.sprintId) === targetSprintId);
+  const selectedSprintTasks = sprintTasks.length;
+  const selectedSprintCompletedTasks = sprintTasks.filter(
+    (t) => t.status === 'done' || Boolean(t.completedAt)
+  ).length;
+  const selectedSprintCompletionRate =
+    selectedSprintTasks > 0
+      ? Math.round((selectedSprintCompletedTasks / selectedSprintTasks) * 100)
+      : 0;
+
+  const matchedSprint = safeSprints.find((s) => Number(s.id) === targetSprintId);
+  const selectedSprintName = matchedSprint ? matchedSprint.name : `Sprint ${targetSprintId}`;
 
   return {
     totalTasks,
@@ -198,5 +242,10 @@ export function getAnalyticsSummary(tasks: Task[] = []): AnalyticsSummary {
     completionRate,
     overdueTasks,
     activeSprintTasks,
+    selectedSprintId: targetSprintId,
+    selectedSprintName,
+    selectedSprintTasks,
+    selectedSprintCompletedTasks,
+    selectedSprintCompletionRate,
   };
 }

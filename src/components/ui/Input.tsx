@@ -45,16 +45,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+            className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300"
           >
             {label}
             {required && <span className="text-rose-500 ml-0.5">*</span>}
           </label>
         )}
 
-        <div className="relative rounded-md shadow-sm">
+        <div className="relative rounded-xl shadow-2xs">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
               {leftIcon}
             </div>
           )}
@@ -67,24 +67,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={Boolean(error)}
             aria-describedby={describedBy}
             className={cn(
-              'block w-full rounded-md border text-sm transition-colors',
-              'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100',
-              'placeholder:text-slate-400 dark:placeholder:text-slate-500',
-              'focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-slate-950',
-              leftIcon ? 'pl-9' : 'pl-3',
-              rightIcon ? 'pr-9' : 'pr-3',
+              'block w-full rounded-xl border text-sm transition-colors',
+              'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100',
+              'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
+              'focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-neutral-950',
+              leftIcon ? 'pl-9' : 'pl-3.5',
+              rightIcon ? 'pr-9' : 'pr-3.5',
               'py-2',
               error
                 ? 'border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-100 focus:ring-rose-500 focus:border-rose-500'
-                : 'border-slate-300 dark:border-slate-700 focus:ring-indigo-500 focus:border-indigo-500',
-              disabled && 'opacity-60 bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed',
+                : 'border-neutral-300 dark:border-neutral-700 focus:ring-indigo-500 focus:border-indigo-500',
+              disabled && 'opacity-60 bg-neutral-50 dark:bg-neutral-800/50 cursor-not-allowed',
               className
             )}
             {...props}
           />
 
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-neutral-400">
               {rightIcon}
             </div>
           )}
@@ -95,7 +95,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         ) : helperText ? (
-          <p id={helperId} className="text-xs text-slate-500 dark:text-slate-400">
+          <p id={helperId} className="text-xs text-neutral-500 dark:text-neutral-400">
             {helperText}
           </p>
         ) : null}

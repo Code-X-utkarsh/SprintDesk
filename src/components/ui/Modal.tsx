@@ -70,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       {/* Backdrop Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-neutral-900/60 dark:bg-neutral-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         aria-hidden="true"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
@@ -78,21 +78,21 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Dialog Container */}
       <div
         className={cn(
-          'relative w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 text-left overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 z-10',
+          'relative w-full bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200/80 dark:border-neutral-800 text-left overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 z-10',
           sizeStyles[size]
         )}
       >
         {/* Header */}
         {(title || description) && (
-          <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800/80 flex items-start justify-between gap-4">
+          <div className="px-6 pt-5 pb-4 border-b border-neutral-100 dark:border-neutral-800/80 flex items-start justify-between gap-4">
             <div>
               {title && (
-                <h2 id={titleId} className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                <h2 id={titleId} className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id={descId} className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p id={descId} className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                   {description}
                 </p>
               )}
@@ -101,7 +101,7 @@ export const Modal: React.FC<ModalProps> = ({
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <X className="h-4 w-4" />
             </button>
@@ -113,7 +113,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+          <div className="px-6 py-3.5 bg-neutral-50 dark:bg-neutral-800/40 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

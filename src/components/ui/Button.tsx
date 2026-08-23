@@ -14,21 +14,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 border border-transparent shadow-sm',
+    'bg-neutral-900 text-white hover:bg-neutral-800 active:bg-neutral-950 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 border border-transparent shadow-xs font-semibold',
   secondary:
-    'bg-slate-100 text-slate-900 hover:bg-slate-200 active:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 border border-transparent',
+    'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 border border-transparent font-medium',
   destructive:
-    'bg-rose-600 text-white hover:bg-rose-500 active:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500 border border-transparent shadow-sm',
+    'bg-rose-600 text-white hover:bg-rose-500 active:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500 border border-transparent shadow-xs font-medium',
   outline:
-    'bg-transparent text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 active:bg-slate-100 dark:active:bg-slate-800',
+    'bg-transparent text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 active:bg-neutral-100 dark:active:bg-neutral-800 font-medium',
   ghost:
-    'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent',
+    'bg-transparent text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 border border-transparent font-medium',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-2.5 py-1.5 text-xs rounded-md gap-1.5',
-  md: 'px-3.5 py-2 text-sm rounded-md gap-2',
-  lg: 'px-4.5 py-2.5 text-base rounded-lg gap-2.5',
+  sm: 'px-3 py-1.5 text-xs rounded-xl gap-1.5',
+  md: 'px-4 py-2 text-sm rounded-xl gap-2',
+  lg: 'px-5 py-2.5 text-base rounded-2xl gap-2.5',
 };
 
 /**
@@ -60,7 +60,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={isLoading}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors cursor-pointer select-none',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950',
           'disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],

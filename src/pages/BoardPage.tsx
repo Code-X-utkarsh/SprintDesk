@@ -3,6 +3,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -18,9 +19,10 @@ import { TaskCard } from '../components/board/TaskCard';
 import { TaskDrawer } from '../components/board/TaskDrawer';
 import { TaskCreateModal } from '../components/board/TaskCreateModal';
 import { DeleteTaskConfirmModal } from '../components/board/DeleteTaskConfirmModal';
-import { Button, Input, Select, Skeleton } from '../components/ui';
+import { Button, Input, CustomSelect, Skeleton } from '../components/ui';
 import type { Task, TaskStatus } from '../types';
-import { Plus, RotateCcw, Search } from 'lucide-react';
+import { Plus, RotateCcw, Search, LayoutGrid, Table, BarChart2 } from 'lucide-react';
+import { cn } from '../utils/cn';
 
 const COLUMNS: Array<{ status: TaskStatus; title: string }> = [
   { status: 'backlog', title: 'Backlog' },
@@ -34,23 +36,35 @@ export const BoardPage: React.FC = () => {
   const {
     tasks,
     users,
+    sprints,
     moveTask,
     openCreateModal,
     resetBoard,
   } = useBoardStore();
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeViewTab, setActiveViewTab] = useState<'board' | 'table' | 'analytics'>('board');
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
 
-  // Configure DnD Sensors
+  const activeSprint = useMemo(() => {
+    return sprints.find((s) => s.id === 3) || sprints[sprints.length - 1];
+  }, [sprints]);
+
+  // Configure DnD Sensors (Pointer for Mouse/Desktop, Touch for Mobile Touch Drag)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Requires moving 5px before drag activates to preserve clicks
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -88,7 +102,6 @@ export const BoardPage: React.FC = () => {
       }
     });
 
-    // Sort tasks in each column by order
     Object.keys(map).forEach((col) => {
       map[col as TaskStatus].sort((a, b) => a.order - b.order);
     });
@@ -171,25 +184,78 @@ export const BoardPage: React.FC = () => {
     [tasks, tasksByColumn, moveTask]
   );
 
-  const userOptions = [
+  const userSelectOptions = [
     { value: 'all', label: 'All Assignees' },
-    ...users.map((u) => ({ value: String(u.id), label: u.name })),
+    ...users.map((u) => ({
+      value: String(u.id),
+      label: u.name,
+      avatar: u.avatar,
+      description: `@${u.email.split('@')[0]}`,
+    })),
+  ];
+
+  const prioritySelectOptions = [
+    { value: 'all', label: 'All Priorities' },
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Action Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="space-y-5">
+      {/* Board Header Title & View Switcher Tabs */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-neutral-200/80 dark:border-neutral-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Sprint 3 Kanban Board
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+            {activeSprint?.name || 'Sprint 3'} Board
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Drag tasks across workflow stages to update status and reorder priorities.
+          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5 font-mono">
+            Timeline: {activeSprint?.startDate || '2026-08-17'} → {activeSprint?.endDate || '2026-08-28'} • Active Sprint
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Switcher Tabs */}
+          <div className="flex items-center p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700">
+            <button
+              onClick={() => setActiveViewTab('board')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                activeViewTab === 'board'
+                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-2xs'
+                  : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+              )}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Board</span>
+            </button>
+            <button
+              onClick={() => setActiveViewTab('table')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                activeViewTab === 'table'
+                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-2xs'
+                  : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+              )}
+            >
+              <Table className="h-3.5 w-3.5" />
+              <span>Table</span>
+            </button>
+            <button
+              onClick={() => setActiveViewTab('analytics')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                activeViewTab === 'analytics'
+                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-2xs'
+                  : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+              )}
+            >
+              <BarChart2 className="h-3.5 w-3.5" />
+              <span>Summary</span>
+            </button>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -197,7 +263,7 @@ export const BoardPage: React.FC = () => {
             onClick={() => resetBoard()}
             title="Reset board data to initial mock dataset"
           >
-            Reset Board
+            Reset
           </Button>
 
           <Button
@@ -211,30 +277,27 @@ export const BoardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+      {/* Search & Custom Filter Controls Bar */}
+      <div className="p-3.5 bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl shadow-2xs grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
         <Input
-          placeholder="Filter tasks by title or keyword..."
+          placeholder="Filter tasks by title..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          leftIcon={<Search className="h-4 w-4" />}
+          leftIcon={<Search className="h-4 w-4 text-neutral-400" />}
         />
 
-        <Select
+        <CustomSelect
+          options={prioritySelectOptions}
           value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value)}
-          options={[
-            { value: 'all', label: 'All Priorities' },
-            { value: 'high', label: 'High Priority' },
-            { value: 'medium', label: 'Medium Priority' },
-            { value: 'low', label: 'Low Priority' },
-          ]}
+          onChange={(val) => setPriorityFilter(String(val))}
+          ariaLabel="Filter by Priority"
         />
 
-        <Select
+        <CustomSelect
+          options={userSelectOptions}
           value={assigneeFilter}
-          onChange={(e) => setAssigneeFilter(e.target.value)}
-          options={userOptions}
+          onChange={(val) => setAssigneeFilter(String(val))}
+          ariaLabel="Filter by Assignee"
         />
       </div>
 
@@ -242,10 +305,10 @@ export const BoardPage: React.FC = () => {
       {!isBoardReady || isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {COLUMNS.map((col) => (
-            <div key={col.status} className="bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-24 w-full rounded-lg" />
-              <Skeleton className="h-24 w-full rounded-lg" />
+            <div key={col.status} className="bg-neutral-100/70 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 space-y-3">
+              <Skeleton className="h-5 w-24 rounded-lg" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
             </div>
           ))}
         </div>
@@ -256,8 +319,8 @@ export const BoardPage: React.FC = () => {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {/* Responsive 4-Column Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 overflow-x-auto pb-4">
+          {/* Responsive 4-Column Layout (Horizontal Scroll Rail on Mobile, 4-Column Grid on Desktop) */}
+          <div className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-4 snap-x min-w-0">
             {COLUMNS.map((col) => (
               <BoardColumn
                 key={col.status}
@@ -268,7 +331,7 @@ export const BoardPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Active Drag Overlay preview */}
+          {/* Active Drag Overlay preview with dashed active styling */}
           <DragOverlay>
             {activeTask ? <TaskCard task={activeTask} /> : null}
           </DragOverlay>

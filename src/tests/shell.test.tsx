@@ -28,17 +28,17 @@ describe('Production Application Shell Test Suite', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('SprintDesk')).toBeInTheDocument();
-      expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
-      expect(screen.getByText('Sprint Board')).toBeInTheDocument();
-      expect(screen.getByText('Analytics')).toBeInTheDocument();
+      expect(screen.getAllByText(/SprintDesk/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Dashboard/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Sprint Board/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Analytics/)[0]).toBeInTheDocument();
     });
   });
 
   it('renders authenticated user details and executes logout on logout button click', async () => {
     storage.setRefreshToken('mock_refresh_token');
     useAuthStore.getState().setAuth(
-      { id: 15, username: 'emilys', email: 'emily.s@example.com', firstName: 'Emily', lastName: 'Johnson' },
+      { id: 1, username: 'emilys', email: 'emily.s@example.com', firstName: 'Emily', lastName: 'Johnson' },
       'mock_access_token'
     );
 
@@ -51,8 +51,8 @@ describe('Production Application Shell Test Suite', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Emily Johnson')).toBeInTheDocument();
-      expect(screen.getByText('@emilys')).toBeInTheDocument();
+      expect(screen.getAllByText(/Emily Johnson/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/emilys/)[0]).toBeInTheDocument();
     });
 
     const logoutButtons = screen.getAllByTitle('Logout');

@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
-import { Button, Input, Select } from '../ui';
+import { Button, Input, CustomSelect } from '../ui';
 import type { TaskStatus, TaskPriority } from '../../types';
-import { X, Edit2, Trash2, Calendar, MessageSquare, Send, Check } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { X, Edit2, Trash2, Calendar, Send, Check, Activity } from 'lucide-react';
 
 export const TaskDrawer: React.FC = () => {
   const {
@@ -87,7 +86,6 @@ export const TaskDrawer: React.FC = () => {
     e.preventDefault();
     if (!newCommentMessage.trim()) return;
 
-    // Use logged-in user id or default fallback
     const authorId = authUser ? authUser.id : 1;
     addComment(selectedTask.id, newCommentMessage.trim(), authorId);
     setNewCommentMessage('');
@@ -96,48 +94,54 @@ export const TaskDrawer: React.FC = () => {
 
   const userOptions = users.map((u) => ({
     value: u.id,
-    label: `${u.name} (@${u.email.split('@')[0]})`,
+    label: u.name,
+    avatar: u.avatar,
+    description: `@${u.email.split('@')[0]}`,
   }));
+
+  const statusOptions = [
+    { value: 'backlog', label: 'Backlog' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'review', label: 'Review' },
+    { value: 'done', label: 'Done' },
+  ];
+
+  const priorityOptions = [
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="task-drawer-title">
       {/* Backdrop Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-neutral-900/60 dark:bg-neutral-950/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={closeDrawer}
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+        <div className="w-screen max-w-full sm:max-w-lg bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
           {/* Drawer Header */}
-          <div className="h-16 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Task-{selectedTask.id}
-              </span>
-              <span
-                className={cn(
-                  'px-2 py-0.5 rounded text-[10px] font-semibold uppercase border',
-                  selectedTask.priority === 'high'
-                    ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                    : selectedTask.priority === 'medium'
-                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                )}
-              >
-                {selectedTask.priority}
-              </span>
+          <div className="px-6 py-5 border-b border-neutral-200/80 dark:border-neutral-800 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                Task-{selectedTask.id} Details
+              </p>
+              <h2 id="task-drawer-title" className="text-lg font-extrabold text-neutral-900 dark:text-white leading-tight mt-0.5">
+                {selectedTask.title}
+              </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant={isEditing ? 'secondary' : 'outline'}
                 size="sm"
                 leftIcon={isEditing ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
                 onClick={() => setIsEditing(!isEditing)}
               >
-                {isEditing ? 'View Mode' : 'Edit Task'}
+                {isEditing ? 'View' : 'Edit'}
               </Button>
 
               <Button
@@ -152,7 +156,7 @@ export const TaskDrawer: React.FC = () => {
               <button
                 onClick={closeDrawer}
                 aria-label="Close drawer"
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-xl text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -172,47 +176,38 @@ export const TaskDrawer: React.FC = () => {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
                     Description
                   </label>
                   <textarea
                     rows={4}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="block w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="block w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Select
+                  <CustomSelect
                     label="Status"
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                    options={[
-                      { value: 'backlog', label: 'Backlog' },
-                      { value: 'in-progress', label: 'In Progress' },
-                      { value: 'review', label: 'Review' },
-                      { value: 'done', label: 'Done' },
-                    ]}
+                    onChange={(val) => setStatus(val as TaskStatus)}
+                    options={statusOptions}
                   />
 
-                  <Select
+                  <CustomSelect
                     label="Priority"
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                    options={[
-                      { value: 'high', label: 'High' },
-                      { value: 'medium', label: 'Medium' },
-                      { value: 'low', label: 'Low' },
-                    ]}
+                    onChange={(val) => setPriority(val as TaskPriority)}
+                    options={priorityOptions}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Select
+                  <CustomSelect
                     label="Assignee"
                     value={assigneeId}
-                    onChange={(e) => setAssigneeId(Number(e.target.value))}
+                    onChange={(val) => setAssigneeId(Number(val))}
                     options={userOptions}
                   />
 
@@ -224,7 +219,7 @@ export const TaskDrawer: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
+                <div className="pt-3 flex justify-end gap-2">
                   <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
                     Cancel
                   </Button>
@@ -236,62 +231,71 @@ export const TaskDrawer: React.FC = () => {
             ) : (
               /* VIEW MODE DETAILS */
               <div className="space-y-6">
-                <div>
-                  <h2 id="task-drawer-title" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {selectedTask.title}
-                  </h2>
-                </div>
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs">
+                {/* Metadata Details Grid */}
+                <div className="p-4 rounded-2xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-800 grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-slate-400 font-medium block uppercase tracking-wider">Status</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 mt-1 block capitalize">
+                    <span className="text-neutral-400 font-medium block uppercase tracking-wider">Stage</span>
+                    <span className="font-bold text-neutral-800 dark:text-neutral-200 mt-1 block capitalize">
                       {selectedTask.status.replace('-', ' ')}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 font-medium block uppercase tracking-wider">Assignee</span>
+                    <span className="text-neutral-400 font-medium block uppercase tracking-wider">Priority</span>
+                    <span className="font-bold text-neutral-800 dark:text-neutral-200 mt-1 block capitalize">
+                      {selectedTask.priority}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-neutral-400 font-medium block uppercase tracking-wider">Assignee</span>
                     <div className="flex items-center gap-1.5 mt-1">
                       {assignee?.avatar ? (
                         <img src={assignee.avatar} alt={assignee.name} className="h-5 w-5 rounded-full object-cover" />
                       ) : (
-                        <div className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-[9px]">
+                        <div className="h-5 w-5 rounded-full bg-neutral-900 text-white font-bold flex items-center justify-center text-[9px]">
                           {assignee?.name[0] || 'U'}
                         </div>
                       )}
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 truncate">
                         {assignee?.name || 'Unassigned'}
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 font-medium block uppercase tracking-wider">Due Date</span>
-                    <div className="flex items-center gap-1 mt-1 text-slate-800 dark:text-slate-200 font-semibold">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{selectedTask.dueDate || 'No due date'}</span>
+                    <span className="text-neutral-400 font-medium block uppercase tracking-wider">Due Date</span>
+                    <div className="flex items-center gap-1 mt-1 text-neutral-800 dark:text-neutral-200 font-semibold">
+                      <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+                      <span>
+                        {selectedTask.dueDate
+                          ? new Date(selectedTask.dueDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : 'No due date'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Description */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                <div className="space-y-1.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                     Description
                   </h3>
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                  <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap">
                     {selectedTask.description || 'No description provided for this task.'}
                   </div>
                 </div>
 
-                {/* Comments Section */}
-                <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                {/* Activity & Comments Thread */}
+                <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Activity & Comments ({taskComments.length})</span>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                      <Activity className="h-4 w-4 text-indigo-500" />
+                      <span>Task Comments ({taskComments.length})</span>
                     </h3>
                   </div>
 
@@ -300,12 +304,15 @@ export const TaskDrawer: React.FC = () => {
                     {taskComments.map((comment) => {
                       const author = users.find((u) => u.id === comment.authorId);
                       return (
-                        <div key={comment.id} className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                        <div key={comment.id} className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-800 space-y-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-900 dark:text-white">
-                              {author ? author.name : 'Team Member'}
+                            <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                              {author?.avatar && (
+                                <img src={author.avatar} alt={author.name} className="h-4 w-4 rounded-full" />
+                              )}
+                              <span>{author ? author.name : 'Team Member'}</span>
                             </span>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-neutral-400 font-mono">
                               {new Date(comment.createdAt).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
@@ -314,7 +321,7 @@ export const TaskDrawer: React.FC = () => {
                               })}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-normal">
+                          <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-normal pl-5">
                             {comment.message}
                           </p>
                         </div>
@@ -322,7 +329,7 @@ export const TaskDrawer: React.FC = () => {
                     })}
 
                     {taskComments.length === 0 && (
-                      <p className="text-xs text-slate-400 italic py-2">No comments yet. Start the conversation below.</p>
+                      <p className="text-xs text-neutral-400 italic py-1">No comments logged yet. Start the conversation below.</p>
                     )}
                   </div>
 

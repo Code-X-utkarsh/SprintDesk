@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '../../types';
 import { useBoardStore } from '../../stores/useBoardStore';
+import { isTaskOverdue } from '../../utils/analytics';
 import { GripVertical, Calendar, MessageSquare } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -10,10 +11,23 @@ interface TaskCardProps {
   task: Task;
 }
 
-const priorityStyles: Record<string, string> = {
-  high: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800',
-  medium: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-  low: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+// Map priority to clean dot badge styles matching reference image
+const priorityDotStyles: Record<string, { dot: string; text: string; bg: string }> = {
+  high: {
+    dot: 'bg-rose-500',
+    text: 'text-rose-700 dark:text-rose-400',
+    bg: 'bg-rose-50 dark:bg-rose-950/40 border-rose-200/60 dark:border-rose-900/60',
+  },
+  medium: {
+    dot: 'bg-amber-500',
+    text: 'text-amber-700 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-900/60',
+  },
+  low: {
+    dot: 'bg-emerald-500',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-900/60',
+  },
 };
 
 export const TaskCard: React.FC<TaskCardProps> = React.memo(({ task }) => {
@@ -40,105 +54,105 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({ task }) => {
   const taskCommentCount = comments.filter((c) => c.taskId === task.id).length;
 
   // Format due date & calculate overdue status
-  const isOverdue =
-    task.dueDate &&
-    task.status !== 'done' &&
-    new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+  const isOverdue = isTaskOverdue(task);
 
   const formattedDueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
+
+  const priorityConfig = priorityDotStyles[task.priority] || priorityDotStyles.low;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group bg-white dark:bg-slate-900 border rounded-xl p-3.5 shadow-2xs transition-all hover:border-indigo-300 dark:hover:border-indigo-700',
+        'group bg-white dark:bg-neutral-900 border rounded-2xl p-4 shadow-2xs transition-all hover:shadow-md hover:border-neutral-300 dark:hover:border-neutral-700 relative touch-manipulation',
         isDragging
-          ? 'opacity-40 border-indigo-500 shadow-md cursor-grabbing'
-          : 'border-slate-200 dark:border-slate-800'
+          ? 'dragging-card-active opacity-40 border-indigo-500 shadow-xl cursor-grabbing'
+          : 'border-neutral-200/80 dark:border-neutral-800'
       )}
     >
-      {/* Top Bar: Drag Handle & Priority Badge */}
-      <div className="flex items-center justify-between mb-2">
-        <span
-          className={cn(
-            'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border',
-            priorityStyles[task.priority] || priorityStyles.low
+      {/* Top Row: Date Badge (Left) & Priority Dot Badge (Right) & Drag Handle */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+          {formattedDueDate ? (
+            <>
+              <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+              <span className={cn(isOverdue && 'text-rose-600 dark:text-rose-400 font-semibold')}>
+                {formattedDueDate}
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] font-mono text-neutral-400">#Task-{task.id}</span>
           )}
-        >
-          {task.priority}
-        </span>
+        </div>
 
-        {/* Drag handle button */}
-        <button
-          {...attributes}
-          {...listeners}
-          type="button"
-          aria-label={`Drag task ${task.title}`}
-          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab active:cursor-grabbing p-0.5 rounded transition-opacity focus:opacity-100"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize border',
+              priorityConfig.bg,
+              priorityConfig.text
+            )}
+          >
+            <span className={cn('w-1.5 h-1.5 rounded-full', priorityConfig.dot)} />
+            {task.priority}
+          </span>
+
+          {/* Drag handle icon button */}
+          <button
+            {...attributes}
+            {...listeners}
+            type="button"
+            aria-label={`Drag task ${task.title}`}
+            className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-grab active:cursor-grabbing p-1 rounded transition-opacity focus:opacity-100"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Title (Click opens drawer) */}
+      {/* Task Title (Click opens drawer) */}
       <h3
         onClick={() => openDrawer(task.id)}
-        className="text-sm font-semibold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2 leading-snug"
+        className="text-sm font-bold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2 leading-snug"
       >
         {task.title}
       </h3>
 
       {/* Description Snippet if available */}
       {task.description && (
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
           {task.description}
         </p>
       )}
 
-      {/* Card Footer: Metadata (Due Date, Comments, Assignee) */}
-      <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-3">
-          {/* Due Date Indicator */}
-          {formattedDueDate && (
-            <div
-              className={cn(
-                'flex items-center gap-1 text-[11px] font-medium',
-                isOverdue
-                  ? 'text-rose-600 dark:text-rose-400 font-semibold'
-                  : 'text-slate-500 dark:text-slate-400'
-              )}
-            >
-              <Calendar className="h-3 w-3 shrink-0" />
-              <span>{formattedDueDate}</span>
-            </div>
-          )}
-
-          {/* Comments count */}
-          {taskCommentCount > 0 && (
-            <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-              <MessageSquare className="h-3 w-3 shrink-0" />
-              <span>{taskCommentCount}</span>
-            </div>
-          )}
-        </div>
-
+      {/* Bottom Row: Assignee Avatar (Left) & Real Comment Count (Right) */}
+      <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between gap-2">
         {/* Assignee Avatar */}
-        {assignee && (
-          <div className="flex items-center gap-1.5" title={`Assignee: ${assignee.name}`}>
-            {assignee.avatar ? (
+        <div className="flex items-center gap-2">
+          {assignee ? (
+            <div className="flex items-center gap-1.5" title={`Assignee: ${assignee.name}`}>
               <img
                 src={assignee.avatar}
                 alt={assignee.name}
-                className="h-6 w-6 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                className="h-6 w-6 rounded-full object-cover border border-neutral-200 dark:border-neutral-700"
               />
-            ) : (
-              <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-[10px]">
-                {assignee.name[0]}
-              </div>
-            )}
+              <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400 truncate max-w-[100px]">
+                {assignee.name.split(' ')[0]}
+              </span>
+            </div>
+          ) : (
+            <span className="text-[11px] text-neutral-400 italic">Unassigned</span>
+          )}
+        </div>
+
+        {/* Comment Count Indicator (Strictly real count) */}
+        {taskCommentCount > 0 && (
+          <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+            <MessageSquare className="h-3.5 w-3.5 text-neutral-400" />
+            <span>{taskCommentCount}</span>
           </div>
         )}
       </div>

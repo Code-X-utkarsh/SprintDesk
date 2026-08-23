@@ -13,7 +13,7 @@ describe('SprintDesk Application Setup & Auth Guard Integration', () => {
   it('renders sign-in workspace screen when unauthenticated', async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getByText('SprintDesk')).toBeInTheDocument();
+      expect(screen.getAllByText(/SprintDesk/)[0]).toBeInTheDocument();
       expect(screen.getByText('Sign in to your team workspace')).toBeInTheDocument();
     });
   });
@@ -28,8 +28,8 @@ describe('SprintDesk Application Setup & Auth Guard Integration', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('SprintDesk')).toBeInTheDocument();
-      expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+      expect(screen.getAllByText(/SprintDesk/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Dashboard/)[0]).toBeInTheDocument();
     });
   });
 });

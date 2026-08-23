@@ -44,25 +44,25 @@ export const NotificationPanel: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden sm:absolute sm:inset-auto sm:right-0 sm:top-14 sm:w-96 sm:z-50"
+      className="fixed inset-x-2 top-16 sm:inset-auto sm:right-0 sm:top-14 sm:w-96 z-50 max-w-[calc(100vw-1rem)] mx-auto sm:mx-0"
       role="dialog"
       aria-modal="true"
       aria-labelledby="notification-panel-title"
     >
       {/* Mobile Backdrop Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs sm:hidden"
+        className="fixed inset-0 bg-neutral-900/60 dark:bg-neutral-950/80 backdrop-blur-xs sm:hidden"
         onClick={closePanel}
         aria-hidden="true"
       />
 
       {/* Main Panel Container */}
-      <div className="relative w-full h-full sm:h-auto max-h-[85vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-top-2 duration-200">
+      <div className="relative w-full h-full sm:h-auto max-h-[85vh] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-none sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-top-2 duration-200">
         {/* Panel Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="p-4 border-b border-neutral-200/80 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/50">
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <h2 id="notification-panel-title" className="text-sm font-bold text-slate-900 dark:text-white">
+            <h2 id="notification-panel-title" className="text-sm font-bold text-neutral-900 dark:text-white">
               Notifications
             </h2>
             {unreadCount > 0 && (
@@ -88,7 +88,7 @@ export const NotificationPanel: React.FC = () => {
             <button
               onClick={closePanel}
               aria-label="Close notification panel"
-              className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -96,15 +96,15 @@ export const NotificationPanel: React.FC = () => {
         </div>
 
         {/* Notification List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+        <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/80">
           {paginatedNotifications.map((n) => (
             <div
               key={n.id}
               className={cn(
                 'p-4 transition-colors flex items-start gap-3 relative group',
                 n.read
-                  ? 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300'
-                  : 'bg-indigo-50/40 dark:bg-indigo-950/20 text-slate-900 dark:text-slate-100 font-medium'
+                  ? 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300'
+                  : 'bg-indigo-50/40 dark:bg-indigo-950/20 text-neutral-900 dark:text-neutral-100 font-medium'
               )}
             >
               {/* Status Indicator / Type Icon */}
@@ -127,11 +127,11 @@ export const NotificationPanel: React.FC = () => {
                   )}
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
                   {n.message}
                 </p>
 
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-mono">
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1.5 font-mono">
                   {new Date(n.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -147,7 +147,7 @@ export const NotificationPanel: React.FC = () => {
                   onClick={() => markAsRead(n.id)}
                   aria-label={`Mark notification ${n.title} as read`}
                   title="Mark as read"
-                  className="absolute right-3 top-4 p-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
+                  className="absolute right-3 top-4 p-1 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
                 >
                   <Check className="h-3.5 w-3.5" />
                 </button>
@@ -157,17 +157,17 @@ export const NotificationPanel: React.FC = () => {
 
           {totalCount === 0 && (
             <div className="p-8 text-center space-y-2">
-              <Bell className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">You're all caught up</p>
-              <p className="text-xs text-slate-400">No active notifications at this time.</p>
+              <Bell className="h-8 w-8 text-neutral-300 dark:text-neutral-600 mx-auto" />
+              <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">You're all caught up</p>
+              <p className="text-xs text-neutral-400">No active notifications at this time.</p>
             </div>
           )}
         </div>
 
         {/* Pagination Footer */}
         {totalCount > 0 && (
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-mono">
+          <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex items-center justify-between text-xs">
+            <span className="text-neutral-500 dark:text-neutral-400 font-mono">
               Showing {startItem}-{endItem} of {totalCount}
             </span>
 
@@ -182,7 +182,7 @@ export const NotificationPanel: React.FC = () => {
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
 
-              <span className="px-2 font-mono text-slate-700 dark:text-slate-300">
+              <span className="px-2 font-mono text-neutral-700 dark:text-neutral-300">
                 {currentPage} / {totalPages}
               </span>
 

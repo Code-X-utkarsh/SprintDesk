@@ -7,16 +7,25 @@ import {
   getPriorityBreakdown,
   getCompletionTrend,
   getAnalyticsSummary,
+  isTaskOverdue,
 } from '../utils/analytics';
+import { getRecentActivity } from '../utils/activityUtils';
 import { useBoardStore } from '../stores/useBoardStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { routes } from '../app/router';
 import { AppProviders } from '../app/providers';
-import type { Task, Sprint } from '../types';
+import type { Task, Sprint, User, TaskComment } from '../types';
+import rawMockData from '../data/mock-data.json';
 
 const mockSprints: Sprint[] = [
   { id: 1, name: 'Sprint 1', startDate: '2026-08-01', endDate: '2026-08-12' },
   { id: 2, name: 'Sprint 2', startDate: '2026-08-13', endDate: '2026-08-24' },
+  { id: 3, name: 'Sprint 3', startDate: '2026-08-25', endDate: '2026-09-05' },
+];
+
+const mockUsers: User[] = [
+  { id: 1, name: 'Emily Johnson', email: 'emily@example.com', avatar: '' },
+  { id: 2, name: 'Michael Williams', email: 'michael@example.com', avatar: '' },
 ];
 
 const mockTasks: Task[] = [
@@ -64,10 +73,20 @@ const mockTasks: Task[] = [
   },
 ];
 
+const mockComments: TaskComment[] = [
+  {
+    id: 1,
+    taskId: 2,
+    authorId: 1,
+    message: 'Added progress update for Task B',
+    createdAt: '2026-08-16T11:00:00Z',
+  },
+];
+
 describe('Analytics Transformation Layer Unit Tests', () => {
   it('calculates Sprint Velocity accurately', () => {
     const velocity = getSprintVelocity(mockTasks, mockSprints);
-    expect(velocity).toHaveLength(2);
+    expect(velocity).toHaveLength(3);
     expect(velocity[0].completedTasks).toBe(1);
     expect(velocity[0].totalTasks).toBe(1);
     expect(velocity[1].completedTasks).toBe(0);
@@ -102,23 +121,76 @@ describe('Analytics Transformation Layer Unit Tests', () => {
     expect(trend[0].cumulative).toBe(1);
   });
 
-  it('calculates Summary KPI metrics', () => {
-    const summary = getAnalyticsSummary(mockTasks);
+  it('calculates Summary KPI metrics with selected sprint support', () => {
+    const summary = getAnalyticsSummary(mockTasks, 2, mockSprints);
     expect(summary.totalTasks).toBe(3);
     expect(summary.completedTasks).toBe(1);
     expect(summary.completionRate).toBe(33);
+    expect(summary.selectedSprintTasks).toBe(2);
+    expect(summary.selectedSprintName).toBe('Sprint 2');
+  });
+
+  it('derives authentic Recent Activity feed without fake events', () => {
+    const activities = getRecentActivity(mockTasks, mockComments, mockUsers, 5);
+    expect(activities.length).toBeGreaterThan(0);
+    expect(activities[0].user.name).toBeDefined();
+    for (let i = 0; i < activities.length - 1; i++) {
+      const t1 = new Date(activities[i].timestamp).getTime();
+      const t2 = new Date(activities[i + 1].timestamp).getTime();
+      expect(t1).toBeGreaterThanOrEqual(t2);
+    }
   });
 
   it('handles empty tasks list safely without throwing', () => {
-    expect(getSprintVelocity([], mockSprints)).toHaveLength(2);
+    expect(getSprintVelocity([], mockSprints)).toHaveLength(3);
     expect(getTaskStatusDistribution([])).toHaveLength(4);
     expect(getPriorityBreakdown([])).toHaveLength(4);
     expect(getCompletionTrend([])).toHaveLength(0);
+    expect(getRecentActivity([])).toHaveLength(0);
 
     const summary = getAnalyticsSummary([]);
     expect(summary.totalTasks).toBe(0);
     expect(summary.completedTasks).toBe(0);
     expect(summary.completionRate).toBe(0);
+  });
+});
+
+describe('Official Dataset Domain Metrics & Overdue Regression Tests', () => {
+  const officialTasks = rawMockData.tasks as Task[];
+  const officialSprints = rawMockData.sprints as Sprint[];
+  const testDate = new Date('2026-08-23T00:00:00Z');
+
+  it('calculates official Sprint 3 scope (18 tasks), 6 done, and 33% completion rate', () => {
+    const summary = getAnalyticsSummary(officialTasks, 3, officialSprints, testDate);
+    expect(summary.selectedSprintTasks).toBe(18);
+    expect(summary.selectedSprintCompletedTasks).toBe(6);
+    expect(summary.selectedSprintCompletionRate).toBe(33);
+    expect(summary.selectedSprintName).toBe('Sprint 3');
+  });
+
+  it('calculates official global totals (30 total tasks, 18 completed, 60% completion rate)', () => {
+    const summary = getAnalyticsSummary(officialTasks, 3, officialSprints, testDate);
+    expect(summary.totalTasks).toBe(30);
+    expect(summary.completedTasks).toBe(18);
+    expect(summary.completionRate).toBe(60);
+  });
+
+  it('calculates exactly 4 overdue unfinished tasks when current date is 2026-08-23', () => {
+    const summary = getAnalyticsSummary(officialTasks, 3, officialSprints, testDate);
+    expect(summary.overdueTasks).toBe(4);
+  });
+
+  it('verifies completed tasks with past due dates are NOT counted as overdue', () => {
+    const completedTaskWithPastDue = officialTasks.find((t) => t.id === 1)!;
+    expect(completedTaskWithPastDue.status).toBe('done');
+    expect(completedTaskWithPastDue.dueDate).toBe('2026-08-18');
+    expect(isTaskOverdue(completedTaskWithPastDue, testDate)).toBe(false);
+  });
+
+  it('verifies tasks due today (2026-08-23) are NOT counted as overdue', () => {
+    const taskDueToday = officialTasks.find((t) => t.id === 3)!;
+    expect(taskDueToday.dueDate).toBe('2026-08-23');
+    expect(isTaskOverdue(taskDueToday, testDate)).toBe(false);
   });
 });
 
@@ -130,13 +202,13 @@ describe('Analytics Page Integration & Dynamic Reactivity Tests', () => {
     );
     useBoardStore.getState().resetBoard({
       tasks: mockTasks,
-      users: [],
-      comments: [],
+      users: mockUsers,
+      comments: mockComments,
       sprints: mockSprints,
     });
   });
 
-  it('renders Analytics page KPI summary cards and chart titles', async () => {
+  it('renders Analytics page KPI summary cards, chart titles, and Recent Activity feed', async () => {
     const testRouter = createMemoryRouter(routes, { initialEntries: ['/analytics'] });
 
     render(
@@ -153,6 +225,7 @@ describe('Analytics Page Integration & Dynamic Reactivity Tests', () => {
         expect(screen.getByText('Task Status Distribution')).toBeInTheDocument();
         expect(screen.getByText('Priority Breakdown Across Workflow Stages')).toBeInTheDocument();
         expect(screen.getByText('Cumulative Task Completion Trend')).toBeInTheDocument();
+        expect(screen.getByText('Recent Activity Feed')).toBeInTheDocument();
       },
       { timeout: 4000 }
     );
@@ -169,7 +242,7 @@ describe('Analytics Page Integration & Dynamic Reactivity Tests', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText('33% completion rate')).toBeInTheDocument();
+        expect(screen.getAllByText(/33%/)[0]).toBeInTheDocument();
       },
       { timeout: 4000 }
     );
@@ -180,7 +253,7 @@ describe('Analytics Page Integration & Dynamic Reactivity Tests', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('67% completion rate')).toBeInTheDocument();
+      expect(screen.getAllByText(/67%/)[0]).toBeInTheDocument();
     });
   });
 });

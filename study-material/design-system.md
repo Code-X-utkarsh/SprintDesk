@@ -13,7 +13,7 @@ A design system is a comprehensive collection of reusable UI components, design 
 Building a custom design system using Tailwind CSS v3 ensures zero reliance on heavy third-party UI component libraries (like MUI or Ant Design), eliminates bundle bloat, guarantees full control over DOM accessibility (`aria-*` attributes), and allows seamless dark mode customization.
 
 ### 3. What Design Tokens Are
-Design tokens are visual design primitives (e.g. `indigo-600`, `slate-900`, `rounded-xl`, `shadow-2xs`) stored as key-value configurations in `tailwind.config.js`. Components consume design tokens rather than hardcoding arbitrary pixel values or CSS rules.
+Design tokens are visual design primitives (e.g. `indigo-600`, `neutral-900`, `rounded-xl`, `shadow-2xs`) stored as key-value configurations in `tailwind.config.js`. Components consume design tokens rather than hardcoding arbitrary pixel values or CSS rules.
 
 ### 4. Difference Between Primitive Component and Page Component
 - **Primitive Component**: A modular, single-responsibility presentational building block (e.g. [`Button`](../src/components/ui/Button.tsx), [`Input`](../src/components/ui/Input.tsx), [`Modal`](../src/components/ui/Modal.tsx)). It is stateless regarding business domain logic.
@@ -55,20 +55,39 @@ Theme preference (`light` / `dark`) is a client-side display preference that aff
 
 ---
 
-## 2. Key Component Walkthroughs & Interview Q&A
+## 2. Visual Redesign Rationale & Reference Image Adaptations
 
-### Q1: How do you handle class name collisions in custom Tailwind components?
-We use a `cn()` helper function combining `clsx` and `tailwind-merge`. This allows consumers to pass custom `className` overrides that clean up and override baseline component styles without specificity bugs.
+### 1. Why the Visual Reference (OBSIDIAN SaaS UI) Was Selected
+The reference UI provides an industry-standard benchmark for modern enterprise B2B SaaS application design: high information density, clean typography scaling, restrained neutral color palettes, rounded container envelopes (`rounded-3xl`), and intuitive metadata hierarchy.
 
-### Q2: How is dark mode implemented across the application?
-Dark mode uses Tailwind's `darkMode: 'class'` configuration. `useAppStore` manages theme state and toggles the `dark` class on `document.documentElement`. Every component uses Tailwind `dark:` modifiers (e.g. `bg-white dark:bg-slate-900`).
+### 2. Key Visual Characteristics Adopted in SprintDesk
+- **Outer Canvas & Container Shell**: Outer `#f4f4f6` canvas framing an inner rounded workspace container (`rounded-3xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800`).
+- **Sidebar & Navigation**: Compact logo header (`SprintDesk`), rounded active highlight pills (`bg-neutral-200/60 font-semibold text-neutral-900 rounded-xl`), pinned sprint section, and assistant/promo callout widget.
+- **Header & Workspace Breadcrumbs**: Title metadata (`⭐ SprintDesk Board v1.0`), view switcher tabs (`Board`, `Table`, `Analytics`), search bar, filter button, notification bell badge, theme toggle, and user avatar.
+- **Kanban Board & Column Cards**: Subtle gray column containers (`bg-neutral-100/70 rounded-2xl p-4`), status indicator icons (`▲ Backlog`, `■ In Progress`, `▲ Review`, `● Done`), task count badges, and ghost "+ Add task" bottom buttons.
+- **Task Cards**: Date badge (`📅 2 Aug`) + Priority dot badge (`● High` rose, `● Medium` amber, `● Low` emerald), category tag pills (`UX`, `Research`, `Design`, `Dev`), overlapping assignee avatar stack, attachment icon (`📎 12`), and comment count (`💬 3`).
+- **Contextual Detail Panel (`TaskDrawer`)**: Adapted from the right-side detail drawer in the reference image, featuring progress summary cards ("Time Left", "Completed"), metadata grid, action buttons, and author-resolved comment thread formatted as a structured Activity Timeline.
 
-### Q3: How do you test UI primitives?
-UI primitives are tested using React Testing Library (`designSystem.test.tsx`). We render components with various props, simulate user events (`fireEvent.click`, `fireEvent.change`), and assert accessibility attributes and DOM output.
+### 3. How Accessibility & Responsiveness Were Preserved
+- **Accessibility**: Native `<button>`, `<input>`, `<select>` elements, explicit form label linkages (`htmlFor`), ARIA dialog attributes (`role="dialog"`), visible focus rings (`focus-visible:ring-2`), and high contrast text ratios.
+- **Responsive Layout**: Fluid breakpoints (`375px`, `768px`, `1024px`, `1440px`). At 375px, sidebar translates to a slide-out drawer, board columns scroll horizontally without layout breaking, and dialogs expand full-width.
 
 ---
 
-## 3. Important Source Files Reference
+## 3. Key Component Walkthroughs & Interview Q&A
+
+### Q1: How did you translate a visual reference image into a reusable React implementation?
+We analyzed the reference's composition, typography scale, spacing rhythm, card dimensions, and interactive states. We translated these into reusable design tokens in Tailwind CSS v3 and composed our presentational components (`AppShell`, `Sidebar`, `BoardColumn`, `TaskCard`, `TaskDrawer`) while strictly preserving existing Zustand stores and TanStack Query logic.
+
+### Q2: How do you handle class name collisions in custom Tailwind components?
+We use a `cn()` helper function combining `clsx` and `tailwind-merge`. This allows consumers to pass custom `className` overrides that clean up and override baseline component styles without specificity bugs.
+
+### Q3: How is dark mode implemented across the application?
+Dark mode uses Tailwind's `darkMode: 'class'` configuration. `useAppStore` manages theme state and toggles the `dark` class on `document.documentElement`. Every component uses Tailwind `dark:` modifiers (e.g. `bg-white dark:bg-neutral-900`).
+
+---
+
+## 4. Important Source Files Reference
 
 - [`Button.tsx`](../src/components/ui/Button.tsx): Variants (`primary`, `secondary`, `destructive`, `outline`, `ghost`), loading spinner, icons.
 - [`Input.tsx`](../src/components/ui/Input.tsx): Form text input with label, error text (`role="alert"`), helper text, left/right icons.

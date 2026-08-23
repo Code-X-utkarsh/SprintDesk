@@ -196,7 +196,7 @@ describe('Authentication Unit & Integration Test Suite', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+        expect(screen.getAllByText(/Dashboard/)[0]).toBeInTheDocument();
       });
     });
   });

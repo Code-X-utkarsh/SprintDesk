@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Input, Select } from '../ui';
+import { Modal, Button, Input, CustomSelect } from '../ui';
 import { useBoardStore } from '../../stores/useBoardStore';
 import { useToast } from '../../hooks/useToast';
 import type { TaskStatus, TaskPriority } from '../../types';
@@ -50,8 +50,23 @@ export const TaskCreateModal: React.FC = () => {
 
   const userOptions = users.map((u) => ({
     value: u.id,
-    label: `${u.name} (@${u.email.split('@')[0]})`,
+    label: u.name,
+    avatar: u.avatar,
+    description: `@${u.email.split('@')[0]}`,
   }));
+
+  const statusOptions = [
+    { value: 'backlog', label: 'Backlog' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'review', label: 'Review' },
+    { value: 'done', label: 'Done' },
+  ];
+
+  const priorityOptions = [
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' },
+  ];
 
   return (
     <Modal
@@ -72,7 +87,7 @@ export const TaskCreateModal: React.FC = () => {
     >
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {validationError && (
-          <div role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400 p-2.5 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+          <div role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
             {validationError}
           </div>
         )}
@@ -86,7 +101,7 @@ export const TaskCreateModal: React.FC = () => {
         />
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
             Description
           </label>
           <textarea
@@ -94,40 +109,31 @@ export const TaskCreateModal: React.FC = () => {
             placeholder="Describe the task objective and acceptance criteria..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="block w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="block w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Select
+          <CustomSelect
             label="Initial Status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as TaskStatus)}
-            options={[
-              { value: 'backlog', label: 'Backlog' },
-              { value: 'in-progress', label: 'In Progress' },
-              { value: 'review', label: 'Review' },
-              { value: 'done', label: 'Done' },
-            ]}
+            onChange={(val) => setStatus(val as TaskStatus)}
+            options={statusOptions}
           />
 
-          <Select
+          <CustomSelect
             label="Priority"
             value={priority}
-            onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            options={[
-              { value: 'high', label: 'High Priority' },
-              { value: 'medium', label: 'Medium Priority' },
-              { value: 'low', label: 'Low Priority' },
-            ]}
+            onChange={(val) => setPriority(val as TaskPriority)}
+            options={priorityOptions}
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Select
+          <CustomSelect
             label="Assignee"
             value={assigneeId}
-            onChange={(e) => setAssigneeId(Number(e.target.value))}
+            onChange={(val) => setAssigneeId(Number(val))}
             options={userOptions}
           />
 
