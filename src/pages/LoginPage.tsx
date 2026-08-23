@@ -121,13 +121,6 @@ export const LoginPage: React.FC = () => {
               >
                 emilys / emilyspass
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFillPreset('kminchelle', '0lelplR')}
-              >
-                kminchelle / 0lelplR
-              </Button>
             </div>
           </div>
 

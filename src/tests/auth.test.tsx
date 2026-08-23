@@ -200,7 +200,7 @@ describe('Authentication Unit & Integration Test Suite', () => {
       });
     });
 
-    it('populates login form with correct demo preset credentials (kminchelle / 0lelplR)', async () => {
+    it('populates login form with correct demo preset credentials (emilys / emilyspass)', async () => {
       useAuthStore.getState().setStatus('unauthenticated');
 
       const testRouter = createMemoryRouter(routes, { initialEntries: ['/login'] });
@@ -212,17 +212,17 @@ describe('Authentication Unit & Integration Test Suite', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('kminchelle / 0lelplR')).toBeInTheDocument();
+        expect(screen.getByText('emilys / emilyspass')).toBeInTheDocument();
       });
 
-      const presetBtn = screen.getByText('kminchelle / 0lelplR');
+      const presetBtn = screen.getByText('emilys / emilyspass');
       const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
       const passwordInput = screen.getByLabelText(/Password/i) as HTMLInputElement;
 
       fireEvent.click(presetBtn);
 
-      expect(usernameInput.value).toBe('kminchelle');
-      expect(passwordInput.value).toBe('0lelplR');
+      expect(usernameInput.value).toBe('emilys');
+      expect(passwordInput.value).toBe('emilyspass');
     });
   });
 });
