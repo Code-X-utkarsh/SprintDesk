@@ -1,6 +1,7 @@
 # SprintDesk — Production Engineering Assessment
 
-[![Build & Test Status](https://img.shields.io/badge/tests-60%20passed%20%7C%20100%25-success)](./docs/SUBMISSION_CHECKLIST.md)
+[![Build & Test Status](https://img.shields.io/badge/tests-73%20passed%20%7C%20100%25-success)](./docs/SUBMISSION_CHECKLIST.md)
+[![CI](https://github.com/Code-X-utkarsh/SprintDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/Code-X-utkarsh/SprintDesk/actions/workflows/ci.yml)
 [![TypeScript Strict](https://img.shields.io/badge/typescript-strict%20mode-blue)](./tsconfig.app.json)
 [![Lighthouse Mobile Performance](https://img.shields.io/badge/Lighthouse%20Perf-94%2F100-success)](./study-material/performance-accessibility-testing.md)
 [![Lighthouse Mobile Accessibility](https://img.shields.io/badge/Lighthouse%20A11y-98%2F100-success)](./study-material/performance-accessibility-testing.md)
@@ -140,7 +141,7 @@ Used strictly for form inputs, modal dialog visibility, and temporary component-
 ### Installation & Development
 ```bash
 # 1. Clone the repository
-git clone [TO BE ADDED BY CANDIDATE - Repository URL]
+git clone https://github.com/Code-X-utkarsh/SprintDesk.git
 cd SprintDesk
 
 # 2. Install dependencies
@@ -161,7 +162,7 @@ npm run preview
 
 ### Automated Testing
 ```bash
-# Execute full 60-test Vitest suite
+# Execute full Vitest suite (73 tests across 11 files)
 npm run test
 ```
 
@@ -169,19 +170,18 @@ npm run test
 
 ## Deployment & Submission Information
 
-- **GitHub Repository**: `[TO BE ADDED BY CANDIDATE]`
-- **Live Application Deployment**: `[TO BE ADDED BY CANDIDATE]`
+- **GitHub Repository**: https://github.com/Code-X-utkarsh/SprintDesk
+- **Live Application Deployment**: AWS Amplify (connected to `main` branch)
 
 ---
 
 ## Demo Credentials
 
-For reviewer testing, use non-sensitive public demo credentials from DummyJSON:
+For reviewer testing, use the non-sensitive public demo credential from DummyJSON:
 
 | Username | Password | Account Name |
 |---|---|---|
 | `emilys` | `emilyspass` | Emily Johnson |
-| `michaelw` | `michaelwpass` | Michael Williams |
 
 ---
 
@@ -193,6 +193,49 @@ For reviewer testing, use non-sensitive public demo credentials from DummyJSON:
 - [`docs/SUBMISSION_CHECKLIST.md`](./docs/SUBMISSION_CHECKLIST.md): Submission verification matrix covering all prompt requirements and test results.
 - [`study-material/demo-script.md`](./study-material/demo-script.md): Demonstration walkthrough video speaking script and interview Q&A guide.
 - [`study-material/performance-accessibility-testing.md`](./study-material/performance-accessibility-testing.md): Deep-dive performance, Lighthouse, accessibility, and testing study guide.
+
+---
+
+## Development Workflow & CI
+
+SprintDesk uses a two-branch Git workflow with automated CI via GitHub Actions.
+
+### Branches
+
+| Branch | Purpose |
+|---|---|
+| `main` | Production — deployed to AWS Amplify automatically on merge |
+| `develop` | Integration — feature branches merge here first |
+
+### Workflow
+
+```text
+feature/my-feature   (create from develop)
+        │
+        ▼
+    develop          (PR + CI must pass + review)
+        │
+        ▼
+      main           (PR + CI must pass + review → Amplify deploys)
+```
+
+### CI Pipeline (`.github/workflows/ci.yml`)
+
+Triggered on:
+- Push to `develop`
+- Pull requests targeting `develop` or `main`
+
+Steps:
+1. `npm ci` — deterministic dependency install
+2. `npm run test` — 73 Vitest tests across 11 files
+3. `npm run build` — TypeScript strict check (`tsc -b`) + Vite production bundle
+
+### Recommended Branch Protection (manual GitHub configuration)
+
+- Require pull request before merging to `main`
+- Require CI status checks to pass
+- Require at least one reviewer approval
+- No direct pushes to `main`
 
 ---
 
