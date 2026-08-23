@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { storage } from '../utils/storage';
@@ -198,6 +198,31 @@ describe('Authentication Unit & Integration Test Suite', () => {
       await waitFor(() => {
         expect(screen.getAllByText(/Dashboard/)[0]).toBeInTheDocument();
       });
+    });
+
+    it('populates login form with correct demo preset credentials (kminchelle / 0lelplR)', async () => {
+      useAuthStore.getState().setStatus('unauthenticated');
+
+      const testRouter = createMemoryRouter(routes, { initialEntries: ['/login'] });
+
+      render(
+        <AppProviders>
+          <RouterProvider router={testRouter} />
+        </AppProviders>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('kminchelle / 0lelplR')).toBeInTheDocument();
+      });
+
+      const presetBtn = screen.getByText('kminchelle / 0lelplR');
+      const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
+      const passwordInput = screen.getByLabelText(/Password/i) as HTMLInputElement;
+
+      fireEvent.click(presetBtn);
+
+      expect(usernameInput.value).toBe('kminchelle');
+      expect(passwordInput.value).toBe('0lelplR');
     });
   });
 });
